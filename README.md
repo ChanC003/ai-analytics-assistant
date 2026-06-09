@@ -5,11 +5,18 @@
 > (read-only) against a PostgreSQL database of **live crypto market data streamed
 > from the CoinGecko API**, and returns a chart-ready table.
 
-![AI Analytics Assistant — realtime crypto dashboard](screenshots/dashboard.png)
+### 📊 Realtime Market Dashboard
 
-> 📸 The realtime **Market Dashboard** (above) — auto-refreshing KPIs plus market-cap,
-> 24h-movers, price-trend, volume and sentiment charts. A second tab, **Ask the AI**,
-> turns plain-English questions into SQL and charts.
+Auto-refreshing KPIs plus market-cap, 24h-movers, price-trend, volume and sentiment charts.
+
+![Realtime crypto market dashboard](screenshots/dashboard.png)
+
+### 💬 Ask the AI (NL → SQL → chart)
+
+Ask in plain English; the assistant writes SQL, runs it read-only, and returns a chart +
+table with **Download CSV** / **Explain SQL** / **View generated SQL**.
+
+![Ask the AI — natural language to SQL](screenshots/ask-ai.png)
 
 ---
 
