@@ -1,11 +1,15 @@
-# 03 — AI Analytics Assistant
+# AI Analytics Assistant
 
 > **Natural language → SQL → results**, no data team bottleneck.
 > Ask a question in plain English; the assistant generates SQL, runs it safely
-> (read-only) against a PostgreSQL database of **live crypto market data crawled
+> (read-only) against a PostgreSQL database of **live crypto market data streamed
 > from the CoinGecko API**, and returns a chart-ready table.
 
-Part of the [ChangPH Data & AI Portfolio](../Portfolio-ChangPH/html/portfolio/index.html).
+![AI Analytics Assistant — realtime crypto dashboard](screenshots/dashboard.png)
+
+> 📸 The realtime **Market Dashboard** (above) — auto-refreshing KPIs plus market-cap,
+> 24h-movers, price-trend, volume and sentiment charts. A second tab, **Ask the AI**,
+> turns plain-English questions into SQL and charts.
 
 ---
 
