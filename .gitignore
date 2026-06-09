@@ -1,0 +1,45 @@
+# ─── Secrets ───
+.env
+!.env.example
+
+# ─── Python ───
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# ─── Data (large / generated) ───
+data/*.csv
+data/*.parquet
+data/*.sql.gz
+!data/.gitkeep
+
+# ─── Notebooks ───
+.ipynb_checkpoints/
+
+# ─── ML / artifacts ───
+*.pkl
+*.joblib
+
+# ─── OS / IDE ───
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ─── Streamlit ───
+.streamlit/secrets.toml
+
+# ─── Logs ───
+*.log
+logs/
+
+# ─── Internal notes (not for public repo) ───
+docs/
+processing.md

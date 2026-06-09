@@ -1,0 +1,156 @@
+# Explicit project name so this stack never gets merged with another project
+# that also has a docker/ folder (compose otherwise derives the name from the
+# parent dir "docker", colliding with e.g. 05-HR-Analytics-Platform/docker).
+name: ai-analytics-assistant
+
+services:
+  # ─────────────────────────── Warehouse (analytics) ───────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: ai-assistant-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ecommerce
+      POSTGRES_USER: assistant
+      POSTGRES_PASSWORD: assistant_pwd
+    ports:
+      # 5433 on host to avoid clashing with a local 5432 / other projects.
+      - "5433:5432"
+    volumes:
+      - ai_assistant_pgdata:/var/lib/postgresql/data
+      # *.sql here run once, in alphabetical order, on first container init.
+      - ../sql/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ../sql/02_readonly_role.sql:/docker-entrypoint-initdb.d/02_readonly_role.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U assistant -d ecommerce"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ─────────────────────────── Streaming (Kafka, KRaft) ───────────────────────────
+  # Single-node Kafka in KRaft mode (no Zookeeper needed).
+  kafka:
+    image: apache/kafka:latest
+    container_name: ai-assistant-kafka
+    restart: unless-stopped
+    ports:
+      - "9092:9092"   # host clients connect here
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,INTERNAL://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      CLUSTER_ID: ai-assistant-cluster-001
+    volumes:
+      - ai_assistant_kafka:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+  # Kafka web UI (inspect topics/messages) — handy for the demo.
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: ai-assistant-kafka-ui
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8082:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: ai-assistant
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      DYNAMIC_CONFIG_ENABLED: "true"
+
+  # ─────────────────────────── Data lake (MinIO / S3) ───────────────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: ai-assistant-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # web console
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - ai_assistant_minio:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # One-shot job: create the raw bucket on startup, then exit.
+  minio-setup:
+    image: minio/mc:latest
+    container_name: ai-assistant-minio-setup
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 minioadmin minioadmin &&
+      mc mb --ignore-existing local/crypto-raw &&
+      echo 'bucket crypto-raw ready';
+      "
+
+  # ─────────────── Always-on ingest workers (the "auto-crawl") ───────────────
+  # These two run 24/7 inside Docker — no need to keep a terminal open.
+  # They talk to Kafka/MinIO/Postgres over the internal Docker network.
+  producer:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: ai-assistant-ingest:latest
+    container_name: ai-assistant-producer
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP: kafka:29092
+      KAFKA_TOPIC: crypto.ticks
+    command: ["python", "-m", "src.streaming.producer", "--loop", "--interval", "60"]
+
+  consumer:
+    image: ai-assistant-ingest:latest    # reuse the producer image
+    container_name: ai-assistant-consumer
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP: kafka:29092
+      KAFKA_TOPIC: crypto.ticks
+      KAFKA_CONSUMER_GROUP: crypto-sink
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: crypto-raw
+      MINIO_SECURE: "false"
+      DB_HOST: postgres
+      DB_PORT: "5432"          # internal port (host maps 5433→5432)
+      DB_NAME: ecommerce
+      DB_USER: assistant
+      DB_PASSWORD: assistant_pwd
+    command: ["python", "-m", "src.streaming.consumer"]
+
+volumes:
+  ai_assistant_pgdata:
+  ai_assistant_kafka:
+  ai_assistant_minio:

@@ -1,0 +1,15 @@
+# Force a dark base theme so the app renders on black, not white.
+# The custom CSS in src/app/theme.py layers the gradient/accents on top.
+[theme]
+base = "dark"
+primaryColor = "#8b6dff"
+backgroundColor = "#08080c"
+secondaryBackgroundColor = "#0f0f16"
+textColor = "#e8ecf2"
+font = "sans serif"
+
+[server]
+headless = true
+
+[browser]
+gatherUsageStats = false
