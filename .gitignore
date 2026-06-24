@@ -43,3 +43,5 @@ logs/
 # ─── Internal notes (not for public repo) ───
 docs/
 processing.md
+CLAUDE.md
+.claude/

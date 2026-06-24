@@ -105,7 +105,7 @@ Producer + consumer run 24/7 as Docker containers; the assistant queries the war
 ### The one-command way (recommended)
 
 ```bash
-cp .env.example .env          # paste a free Groq key into GROQ_API_KEY
+cp .env.example .env          # fill in password + paste a free Groq key into GROQ_API_KEY
 cd docker
 docker compose up -d --build  # Postgres + Kafka + MinIO + 24/7 producer/consumer
 cd ..
@@ -138,8 +138,8 @@ streamlit run app.py                        # the AI Assistant UI
 |---|---|---|
 | AI Assistant | http://localhost:8501 | — |
 | Kafka UI | http://localhost:8082 | — |
-| MinIO Console | http://localhost:9001 | minioadmin / minioadmin |
-| PostgreSQL | localhost:5433 | assistant / assistant_pwd |
+| MinIO Console | http://localhost:9001 | `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` (see `.env`) |
+| PostgreSQL | localhost:5433 | `DB_USER` / `DB_PASSWORD` (see `.env`) |
 
 ---
 

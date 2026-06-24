@@ -6,13 +6,13 @@
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'readonly') THEN
-    CREATE ROLE readonly LOGIN PASSWORD 'readonly_pwd';
+    CREATE ROLE readonly LOGIN PASSWORD 'Changph03@';
   END IF;
 END
 $$;
 
 -- Connect + read the schema, nothing else.
-GRANT CONNECT ON DATABASE ecommerce TO readonly;
+GRANT CONNECT ON DATABASE aiassistant_db TO readonly;
 GRANT USAGE ON SCHEMA public TO readonly;
 
 -- SELECT-only on every existing table...
