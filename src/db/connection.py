@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from urllib.parse import quote_plus
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
@@ -11,7 +12,7 @@ from src.config import DBConfig, db_config
 
 
 def _url(cfg: DBConfig, user: str, password: str) -> str:
-    return f"postgresql+psycopg2://{user}:{password}@{cfg.host}:{cfg.port}/{cfg.name}"
+    return f"postgresql+psycopg2://{user}:{quote_plus(password)}@{cfg.host}:{cfg.port}/{cfg.name}"
 
 
 @lru_cache(maxsize=1)
