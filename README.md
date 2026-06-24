@@ -20,6 +20,49 @@ table with **Download CSV** / **Explain SQL** / **View generated SQL**.
 
 ---
 
+## How to run
+
+### The one-command way (recommended)
+
+```bash
+cp .env.example .env          # fill in password + paste a free Groq key into GROQ_API_KEY
+cd docker
+docker compose up -d --build  # Postgres + Kafka + MinIO + 24/7 producer/consumer
+cd ..
+pip install -r requirements.txt
+streamlit run app.py          # open http://localhost:8501
+```
+
+That's it — the producer/consumer containers start crawling immediately and keep
+the warehouse + data lake fed. Ask a question in the UI:
+
+- *"Top 10 coins by current price"*
+- *"Which 5 coins gained the most in the last 24 hours?"*
+- *"Price history of bitcoin over time"*
+
+> Free Groq key: https://console.groq.com/keys (default provider). Gemini/OpenAI/DeepSeek/Ollama
+> also work — pick from the sidebar.
+> Run `streamlit run app.py` (root entrypoint), **not** `src/app/main.py`, so `import src.*` resolves.
+
+### Running each piece by hand
+
+```bash
+python -m src.streaming.producer --once    # crawl CoinGecko → Kafka
+python -m src.streaming.consumer --drain    # Kafka → MinIO + Postgres, then exit
+streamlit run app.py                        # the AI Assistant UI
+```
+
+### Service endpoints
+
+| Service | URL | Login |
+|---|---|---|
+| AI Assistant | http://localhost:8501 | — |
+| Kafka UI | http://localhost:8082 | — |
+| MinIO Console | http://localhost:9001 | `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` (see `.env`) |
+| PostgreSQL | localhost:5433 | `DB_USER` / `DB_PASSWORD` (see `.env`) |
+
+---
+
 ## Highlights
 
 - **Real-time streaming ingest** — a Kafka producer crawls CoinGecko (top-50 coins) and a
@@ -97,49 +140,6 @@ Producer + consumer run 24/7 as Docker containers; the assistant queries the war
 │   └── app/                  ← Streamlit app
 └── tests/                    ← guard + streaming tests
 ```
-
----
-
-## How to run
-
-### The one-command way (recommended)
-
-```bash
-cp .env.example .env          # fill in password + paste a free Groq key into GROQ_API_KEY
-cd docker
-docker compose up -d --build  # Postgres + Kafka + MinIO + 24/7 producer/consumer
-cd ..
-pip install -r requirements.txt
-streamlit run app.py          # open http://localhost:8501
-```
-
-That's it — the producer/consumer containers start crawling immediately and keep
-the warehouse + data lake fed. Ask a question in the UI:
-
-- *"Top 10 coins by current price"*
-- *"Which 5 coins gained the most in the last 24 hours?"*
-- *"Price history of bitcoin over time"*
-
-> Free Groq key: https://console.groq.com/keys (default provider). Gemini/OpenAI/DeepSeek/Ollama
-> also work — pick from the sidebar.
-> Run `streamlit run app.py` (root entrypoint), **not** `src/app/main.py`, so `import src.*` resolves.
-
-### Running each piece by hand
-
-```bash
-python -m src.streaming.producer --once    # crawl CoinGecko → Kafka
-python -m src.streaming.consumer --drain    # Kafka → MinIO + Postgres, then exit
-streamlit run app.py                        # the AI Assistant UI
-```
-
-### Service endpoints
-
-| Service | URL | Login |
-|---|---|---|
-| AI Assistant | http://localhost:8501 | — |
-| Kafka UI | http://localhost:8082 | — |
-| MinIO Console | http://localhost:9001 | `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` (see `.env`) |
-| PostgreSQL | localhost:5433 | `DB_USER` / `DB_PASSWORD` (see `.env`) |
 
 ---
 
