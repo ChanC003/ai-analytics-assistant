@@ -1,6 +1,6 @@
 # Explicit project name so this stack never gets merged with another project
 # that also has a docker/ folder (compose otherwise derives the name from the
-# parent dir "docker", colliding with e.g. 05-HR-Analytics-Platform/docker).
+# parent dir "docker", colliding with e.g. 04-HR-Analytics-Platform/docker).
 name: ai-analytics-assistant
 
 services:
