@@ -41,7 +41,9 @@ Thumbs.db
 logs/
 
 # ─── Internal notes (not for public repo) ───
-docs/
+docs/BUILD_PLAN.md
+docs/GUIDE_FOR_BEGINNERS.md
+docs/MANUAL_RUNBOOK.md
 processing.md
 CLAUDE.md
 .claude/
